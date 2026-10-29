@@ -56,36 +56,32 @@ class MLP:
     def update_weights(self, y_true, y_pred):
         assert self.params != {}
 
-        # ∂L/∂pred
-        pd_loss = cross_entropy_gradient(y_true, y_pred)
-        # ∂sigmoid(x)/∂x
-        pd_second_sigmoid = sigmoid_gradient(self.params['W2 @ g(W1 @ X)'])
-        # ∂(W2 @ g(W1 @ X))/∂ W2
-        pd_matmul = self.params['g(W1 @ X)']
-
-        # save the post_w2_loss that captures cross entropy and final sigmoid
-        post_w2_loss = pd_loss * pd_second_sigmoid
-        w2_update = np.mean(post_w2_loss * pd_matmul, axis=0, keepdims=True)
+        # Terms in order:
+        #   ∂(W2 @ g(W1 @ X))/∂ W2
+        #   ∂L/∂pred
+        #   ∂sigmoid(x)/∂x
+        w2_update = (
+            self.params['g(W1 @ X)'].T \
+            @ (cross_entropy_gradient(y_true, y_pred) \
+            * sigmoid_gradient(self.params['W2 @ g(W1 @ X)']))
+        ) / y_true.shape[0]
         
-        # ∂(W2 @ g(W1 @ X))/∂ g(W1 @ X)
-        pd_W2_g = self.W2
-        # ∂sigmoid(x)/∂x
-        pd_first_sigmoid = sigmoid_gradient(self.params['W1 @ X'])
-        # ∂(W1 @ X) /∂W1
-        pd_W1_X = self.params['X']
-
-        w1_update = np.zeros_like(self.W1)
-
-        # for each node in the hidden layer ...
-        for i in range(self.W1.shape[1]):
-            # ... only grab the losses for one specific hidden node
-            w1_loss = post_w2_loss * pd_W2_g[i + 1] * pd_first_sigmoid[:, (i, )]
-            w1_update[:, i] = np.mean(
-                w1_loss * pd_W1_X, axis=0, keepdims=True)
+        # Terms in order:
+        #   ∂(W1 @ X)/∂W1 
+        #   ∂L/∂pred
+        #   ∂sigmoid(x)/∂x
+        #   ∂(W2 @ g(W1 @ X))/∂ g(W1 @ X), but no intercept
+        #   ∂sigmoid(x)/∂x
+        w1_update = self.params['X'].T @ (
+            (cross_entropy_gradient(y_true, y_pred)  \
+              * sigmoid_gradient(self.params['W2 @ g(W1 @ X)']) \
+              @ self.W2[1:].T) \
+            * sigmoid_gradient(self.params['W1 @ X'])
+        ) / y_true.shape[0]
 
         self.params = {}
         self.W1 -= self.lr * w1_update
-        self.W2 -= self.lr * w2_update.T
+        self.W2 -= self.lr * w2_update
 
     def fit(self, X, y, steps=10000, quiet=True):
         if X.shape[1] == self.W1.shape[1] - 1:
