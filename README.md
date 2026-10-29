@@ -10,6 +10,7 @@ you need to save a copy of it to your own Google Drive.
 
 ### October 20
 - [Classification via Linear Regression Demo](https://colab.research.google.com/github/cs349f26/notebooks/blob/main/classification_demo.ipynb)
+- [Classification via Linear Regression Demo #2](https://colab.research.google.com/github/cs349f26/notebooks/blob/main/classification_demo_2.ipynb)
 
 ### October 27-29
 - [Backprop Demo](https://colab.research.google.com/github/cs349f26/notebooks/blob/main/backprop.ipynb) (to run this on Colab, you'll need to copy the `backprop_demo` module).
